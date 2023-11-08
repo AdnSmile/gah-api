@@ -22,6 +22,6 @@ class Kamar extends Model
 
     public function FKKamarInJenisKamar()
     {
-        return $this->hasMany(JenisKamar::class, 'id_jenis_kamar', 'id_jenis_kamar');
+        return $this->hasOne(JenisKamar::class, 'id_jenis_kamar', 'id_jenis_kamar');
     }
 }

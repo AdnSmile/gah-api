@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\Customer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
@@ -90,6 +91,139 @@ class AccountController extends Controller {
 
     return response()->json([
       'message' => 'Akun berhasil dibuat',
+      'status' => "success",
+      'data' => $account
+    ], 200);
+  }
+
+  public function loginCustomer(Request $req) {
+    
+    $validated = [
+      'username' => 'required',
+      'password' => 'required'
+    ];
+
+    $validator = Validator::make($req->all(), $validated);
+
+    if ($validator->fails()) {
+      return response()->json([
+        'message' => 'Terjadi kesalahan',
+        'status' => "error",
+        'data' => $validator->errors()
+      ], 400);
+    }
+
+    $customer = Account::where('username', $req->username)->first();
+
+    if (!$customer || !Hash::check($req->password, $customer->password)) {
+      return response()->json([
+          'success' => "error",
+          'message' => 'Username atau password salah',
+          'data' => 'Unauthorized',
+      ], 401);
+    }
+
+    $role = $customer::where('username', $req->username)->value('role');
+
+    $token = $customer->createToken('token', [$role])->plainTextToken;
+
+    return response()->json([
+      'message' => 'Login berhasil',
+      'status' => "success",
+      'data' => [
+        'token' => $token,
+        'account' => $customer
+      ]
+    ], 200);
+  }
+
+  public function logout(Request $req) {
+
+    $account = Account::where('username', $req->username)->first();
+
+    $account->tokens()->delete();
+
+    return response()->json([
+      'message' => 'Logout berhasil',
+      'status' => "success",
+      'data' => null
+    ], 200);
+  }
+
+  public function getDetailAccountWithReservasi() {
+
+    $account = Auth::user()->FKAccountInCustomer()->with('FkCustomerInReservasi')->first();
+
+    if (!$account) {
+        
+        return response()->json([
+          'message' => 'Akun tidak ditemukan',
+          'status' => "error",
+          'data' => null
+        ], 404);
+    }
+
+    return response()->json([
+      'message' => 'Data akun ditemukan',
+      'status' => "success",
+      'data' => $account
+    ], 200);
+  }
+
+  public function getDetailAccount() {
+
+    $account = Auth::user();
+
+    return response()->json([
+      'message' => 'Data akun ditemukan',
+      'status' => "success",
+      'data' => $account
+    ], 200);
+  }
+
+  public function updatePassword(Request $req) {
+
+    $validated = [
+      'username' => 'required',
+      'password' => 'required',
+      'new_password' => 'required'
+    ];
+
+    $validator = Validator::make($req->all(), $validated);
+
+    if ($validator->fails()) {
+      return response()->json([
+        'message' => 'Terjadi kesalahan',
+        'status' => "error",
+        'data' => $validator->errors()
+      ], 400);
+    }
+
+    $account = Account::where('username', $req->username)->first();
+
+    if (!$account) {
+
+      return response()->json([
+        'message' => 'Akun tidak ditemukan',
+        'status' => "error",
+        'data' => null
+      ], 404);
+    }
+
+    if (!Hash::check($req->password, $account->password)) {
+
+      return response()->json([
+        'message' => 'Password salah',
+        'status' => "error",
+        'data' => null
+      ], 400);
+    }
+
+    $account->password = Hash::make($req->new_password);
+    $account->save();
+
+    return response()->json([
+      'message' => 'Password berhasil diupdate',
       'status' => "success",
       'data' => $account
     ], 200);

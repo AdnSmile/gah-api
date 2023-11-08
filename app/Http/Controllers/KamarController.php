@@ -37,6 +37,15 @@ class KamarController extends Controller {
       ], 400);
     }
 
+    $checkKamar = Kamar::where('id_kamar', $req->id_kamar)->first();
+    if ($checkKamar) {
+      return response()->json([
+        'message' => 'Data kamar sudah ada',
+        'status' => "error",
+        'data' => $validator->errors()
+      ], 400);
+    }
+
     $kamar = Kamar::create([
       'id_jenis_kamar' => $req->id_jenis_kamar,
       'id_kamar' => $req->id_kamar,
@@ -105,6 +114,18 @@ class KamarController extends Controller {
         'status' => "error",
         'data' => $validator->errors()
       ], 400);
+    }
+
+    if ($kamar->id_kamar != $req->id_kamar) {
+
+      $checkKamar = Kamar::where('id_kamar', $req->id_kamar)->first();
+      if ($checkKamar) {
+        return response()->json([
+          'message' => 'Data kamar sudah ada',
+          'status' => "error",
+          'data' => $validator->errors()
+        ], 400);
+      }
     }
 
     $kamar->id_jenis_kamar = $req->id_jenis_kamar;

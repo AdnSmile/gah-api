@@ -30,7 +30,7 @@ class Account extends Authenticatable {
 
     public $timestamps = false;
 
-    public function FkAccountInCustomer()
+    public function FKAccountInCustomer()
     {
         return $this->belongsTo(Customer::class, 'id_customer', 'id_customer');
     }

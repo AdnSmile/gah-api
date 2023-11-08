@@ -23,4 +23,8 @@ class Customer extends Model {
     ];
 
     public $timestamps = false;
+
+    public function FkCustomerInReservasi() {
+      return $this->hasMany(Reservasi::class, 'id_customer', 'id_customer');
+    }
 }
