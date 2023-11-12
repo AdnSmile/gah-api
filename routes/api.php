@@ -10,6 +10,7 @@ use App\Http\Controllers\FasilitasController;
 use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\TarifController;
 use App\Http\Controllers\ReservasiController;
+use App\Http\Controllers\ReservasiKamarController;
 
 /*
 |--------------------------------------------------------------------------
@@ -57,14 +58,16 @@ Route::get('/',function (){
 Route::middleware(['auth:sanctum', 'ability:admin'])->group(function () {
     Route::get('kamar', [KamarController::class, 'index']);
     Route::post('kamar', [KamarController::class, 'store']);
-    Route::get('kamar/{idKamar}', [KamarController::class, 'show']);
     Route::put('kamar/{idKamar}', [KamarController::class, 'update']);
     Route::delete('kamar/{idKamar}', [KamarController::class, 'delete']);
 });
 
+Route::get('kamar/{idKamar}', [KamarController::class, 'show']);
+
+Route::get('fasilitas', [FasilitasController::class, 'index'])->middleware('auth:sanctum', 'ability:customer,admin,sm,fo,gm,owner');
+
 Route::middleware(['auth:sanctum', 'ability:sm'])->group(function () {
     
-    Route::get('fasilitas', [FasilitasController::class, 'index']);
     Route::post('fasilitas', [FasilitasController::class, 'store']);
     Route::get('fasilitas/{id}', [FasilitasController::class, 'show']);
     Route::put('fasilitas/{id}', [FasilitasController::class, 'update']);
@@ -81,6 +84,17 @@ Route::middleware(['auth:sanctum', 'ability:sm'])->group(function () {
     Route::get('tarif/{id}', [TarifController::class, 'show']);
     Route::put('tarif/{id}', [TarifController::class, 'update']);
     Route::delete('tarif/{id}', [TarifController::class, 'delete']);
+
+    // New Reservasi
+    Route::post('new_reservasi_sm/{id_cust}', [ReservasiController::class, 'createGroup']);
+    Route::patch('new_reservasi_sm/{id_res}', [ReservasiController::class, 'bayarGroup']);
+
+    // Pembatalan
+    Route::get('pembatalan_sm', [ReservasiController::class, 'getListPembatalanGroup']);
+    Route::delete('pembatalan_sm/{id_res}', [ReservasiController::class, 'batalkanGroup']);
+
+    // Pemesanan yg belum dibayar
+    Route::get('reservasi_bb', [ReservasiController::class, 'getListBelumDibayar']);
 });
 
 // customer
@@ -96,4 +110,13 @@ Route::get('reservasi/{id}', [ReservasiController::class, 'show'])->middleware('
 // riwayat transaksi
 Route::get('riwayatTransaksi', [AccountController::class, 'getRiwayatTransaksiCustomer'])->middleware('auth:sanctum', 'ability:customer,sm');
 
-Route::get('detailReservasi/{id}', [ReservasiController::class, 'show'])->middleware('auth:sanctum', 'ability:customer,sm');
+// cek ketersediaan kamar
+Route::post('ketersediianKamar', [ReservasiKamarController::class, 'checkAvability']);
+
+// Customer reservasi
+Route::post('new_reservasi_c', [ReservasiController::class, 'createCustomercreatePersonal'])->middleware('auth:sanctum', 'ability:customer');
+Route::patch('new_reservasi_c/{id_res}', [ReservasiController::class, 'bayarPersonal']);
+
+// Batalkan personal
+Route::get('pembatalan_c', [ReservasiController::class, 'getListPembatalanPersonal'])->middleware('auth:sanctum', 'ability:customer');
+Route::delete('pembatalan_c/{id_res}', [ReservasiController::class, 'batalkanPersonal'])->middleware('auth:sanctum', 'ability:customer');
