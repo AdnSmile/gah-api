@@ -70,7 +70,7 @@ class ReservasiKamarController extends Controller {
           if($season->id_jenis_kamar == $jumlah->id_jenis_kamar) {
             if($season->jenis_season == 'high') {
               $harga = $jumlah->tarif_dasar + $season->perubahan_tarif;
-            } else {
+            } else if ($season->jenis_season == 'promo') {
               $harga = $jumlah->tarif_dasar - $season->perubahan_tarif;
             }
             $jumlah->nama_season = $season->nama_season;

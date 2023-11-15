@@ -86,15 +86,18 @@ Route::middleware(['auth:sanctum', 'ability:sm'])->group(function () {
     Route::delete('tarif/{id}', [TarifController::class, 'delete']);
 
     // New Reservasi
-    Route::post('new_reservasi_sm/{id_cust}', [ReservasiController::class, 'createGroup']);
-    Route::patch('new_reservasi_sm/{id_res}', [ReservasiController::class, 'bayarGroup']);
+    Route::post('newReservasiSm/{id_cust}', [ReservasiController::class, 'createGroup']);
+    Route::patch('newReservasiSm/{id_res}', [ReservasiController::class, 'bayarGroup']); // bayar
 
     // Pembatalan
-    Route::get('pembatalan_sm', [ReservasiController::class, 'getListPembatalanGroup']);
-    Route::delete('pembatalan_sm/{id_res}', [ReservasiController::class, 'batalkanGroup']);
+    Route::get('pembatalanSm', [ReservasiController::class, 'getListPembatalanGroup']);
+    Route::delete('pembatalanSm/{id_res}', [ReservasiController::class, 'batalkanGroup']);
 
     // Pemesanan yg belum dibayar
     Route::get('reservasi_bb', [ReservasiController::class, 'getListBelumDibayar']);
+
+    // all reservasi
+    Route::get("all_reservasi", [ReservasiController::class, 'index']);
 });
 
 // customer
@@ -106,6 +109,7 @@ Route::get('customer/{id}', [CustomerController::class, 'show'])->middleware('au
 
 // reservasi
 Route::get('reservasi/{id}', [ReservasiController::class, 'show'])->middleware('auth:sanctum', 'ability:customer,sm');
+Route::get('reservasiGrup', [ReservasiController::class, 'index'])->middleware('auth:sanctum', 'ability:sm,customer');
 
 // riwayat transaksi
 Route::get('riwayatTransaksi', [AccountController::class, 'getRiwayatTransaksiCustomer'])->middleware('auth:sanctum', 'ability:customer,sm');
@@ -114,9 +118,9 @@ Route::get('riwayatTransaksi', [AccountController::class, 'getRiwayatTransaksiCu
 Route::post('ketersediianKamar', [ReservasiKamarController::class, 'checkAvability']);
 
 // Customer reservasi
-Route::post('new_reservasi_c', [ReservasiController::class, 'createCustomercreatePersonal'])->middleware('auth:sanctum', 'ability:customer');
-Route::patch('new_reservasi_c/{id_res}', [ReservasiController::class, 'bayarPersonal']);
+Route::post('newReservasiCus/{id_cust}', [ReservasiController::class, 'createPersonal'])->middleware('auth:sanctum', 'ability:customer');
+Route::patch('newReservasiCus/{id_res}', [ReservasiController::class, 'bayarPersonal']); // bayar
 
 // Batalkan personal
-Route::get('pembatalan_c', [ReservasiController::class, 'getListPembatalanPersonal'])->middleware('auth:sanctum', 'ability:customer');
-Route::delete('pembatalan_c/{id_res}', [ReservasiController::class, 'batalkanPersonal'])->middleware('auth:sanctum', 'ability:customer');
+Route::get('pembatalanCus', [ReservasiController::class, 'getListPembatalanPersonal'])->middleware('auth:sanctum', 'ability:customer');
+Route::delete('pembatalanCus/{id_res}', [ReservasiController::class, 'batalkanPersonal'])->middleware('auth:sanctum', 'ability:customer');

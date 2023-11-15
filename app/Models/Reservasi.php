@@ -30,7 +30,9 @@ class Reservasi extends Model {
       'id_customer',
       'id_pic',
       'id_fo',
-      'id_invoice'
+      'id_invoice',
+      'updated_at',
+      'created_at'
     ];
 
     public function FKReservasiInCustomer() {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Reservasi;
 use App\Models\TransaksiFasilitas;
 use App\Models\TransaksiKamar;
+use App\Models\Fasilitas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -20,7 +21,7 @@ class ReservasiController extends Controller {
       'FKReservasiInFO',
       'FKReservasiInFasilitas.FKTransaksiFasilitasInFasilitas',
       'FKReservasiInInvoice',
-      'FKReservasiInTransaksiKamar.FKTransaksiKamarInJenisKamar:id_jenis_kamar, jenis_kamar'
+      'FKReservasiInTransaksiKamar.FKTransaksiKamarInJenisKamar:id_jenis_kamar,nama'
       )->where('id_reservasi', $id)->first();
 
       if (!$reservasi) {
@@ -38,9 +39,26 @@ class ReservasiController extends Controller {
       ], 200);
   }
 
+  public function index() {
+    $reservasi = Reservasi::with(
+      'FKReservasiInCustomer',
+      'FKReservasiInPIC',
+      'FKReservasiInFO',
+      'FKReservasiInFasilitas.FKTransaksiFasilitasInFasilitas',
+      'FKReservasiInInvoice',
+      'FKReservasiInTransaksiKamar.FKTransaksiKamarInJenisKamar:id_jenis_kamar,nama'
+      )->orderBy('created_at', 'desc')->get();
+
+      return response()->json([
+        'message' => 'Data akun ditemukan',
+        'status' => "success",
+        'data' => $reservasi
+      ], 200);
+  }
+
   private function getNewIdBooking($prefix, $tglBooking) {
     $tglBookingFormatted = date("dmy", strtotime($tglBooking));
-    $idTerbaru = Reservasi::latest();
+    $idTerbaru = Reservasi::orderBy('tgl_reservasi', 'desc')->first()->id_booking;
     $tigaDigitTerakhir = intval(substr($idTerbaru, -3));
     $tigaDigitTerakhir++;
 
@@ -48,7 +66,7 @@ class ReservasiController extends Controller {
     return $idBooking;
   }
 
-  private function addNewBooking(Request $req, $idCustomer, $idSM = null) {
+  private function addNewBooking(Request $req, $idCustomer, $idSM) {
     // id customer sudah pasti harus diisi
     // id sm diisi kalau reservasi group
 
@@ -112,7 +130,7 @@ class ReservasiController extends Controller {
       }
     }
     
-    if ($idSM) {
+    if (Auth::user()->role == 'sm') {
       // Reservasi group
       $idBooking = $this->getNewIdBooking('G', $req->tgl_checkin);
     } else {
@@ -122,15 +140,17 @@ class ReservasiController extends Controller {
     $reservasi = Reservasi::create([
       'id_booking' => $idBooking,
       'id_customer' => $idCustomer,
-      'id_sm' => $idSM,
+      'id_pic' => $idSM,
       'jumlah_anak' => $req->jumlah_anak,
       'jumlah_dewasa' => $req->jumlah_dewasa,
       'permintaan_khusus' => $req->permintaan_khusus,
-      'tgl_checkin' => $req->tgl_checkin,
-      'tgl_checkout' => $req->tgl_checkout,
+      'tgl_checkin' => date("Y-m-d", strtotime($req->tgl_checkin)),
+      'tgl_checkout' => date("Y-m-d", strtotime($req->tgl_checkout)),
       'tgl_reservasi' => date('Y-m-d H:i:s'),
       'status' => 'Menunggu Pembayaran',
+      'total_deposit' => 0,
       'total_pembayaran' => $totalPembayaran, // hanya kamar, sisanya di invoice
+      'updated_at' => null,
     ]);
 
     // Insert ke kamar
@@ -139,16 +159,28 @@ class ReservasiController extends Controller {
         TransaksiKamar::create([
           'id_jenis_kamar' => $kam['id_jenis_kamar'],
           'harga_per_malam' => $kam['harga_per_malam'],
+          'id_reservasi' => Reservasi::orderBy('tgl_reservasi', 'desc')->first()->id_reservasi,
         ]);
       }
     }
 
     // Insert ke fasilitas
     foreach ($fasilitas as $fas) {
+      // $harga_layanan = Fasilitas::find($fas['id_layanan'])->harga;
+      $layanan = Fasilitas::where('id_layanan', $fas['id_layanan'])->first();
+
+      $reservasi = Reservasi::orderBy('tgl_reservasi', 'desc')->first();
+
       TransaksiFasilitas::create([
-        'id_layanan' => $fas['id_layanan'],
         'jumlah' => $fas['jumlah'],
+        'id_reservasi' => $reservasi->id_reservasi,
+        'sub_total' => $fas['jumlah'] * $layanan->tarif_layanan,
+        'tgl_menerima' => date("Y-m-d", strtotime($req->tgl_checkin)),
+        'id_layanan' => $fas['id_layanan'],
       ]);
+
+      // $reservasi->total_pembayaran += $fas['jumlah'] * $layanan->tarif_layanan;
+      // $reservasi->save();
     }
 
     return response()->json([
@@ -183,7 +215,18 @@ class ReservasiController extends Controller {
       ], 404);
     }
 
+    $minimumPay = $reservasi->total_pembayaran * 0.5;
+
+    if ($req->uang_jaminan < $minimumPay) {
+      return response()->json([
+        'message' => 'Uang jaminan minimal 50% dari total pembayaran',
+        'status' => "error",
+        'data' => null
+      ], 400);
+    }
+    
     $reservasi->uang_jaminan = $req->uang_jaminan;
+    $reservasi->status = "Sudah dibayar";
     $reservasi->tgl_pembayaran = date('Y-m-d H:i:s');
 
     $reservasi->save();
@@ -204,10 +247,12 @@ class ReservasiController extends Controller {
         'FKReservasiInFO',
         'FKReservasiInFasilitas.FKTransaksiFasilitasInFasilitas',
         'FKReservasiInInvoice',
-        'FKReservasiInTransaksiKamar.FKTransaksiKamarInJenisKamar:id_jenis_kamar, jenis_kamar'
+        'FKReservasiInTransaksiKamar.FKTransaksiKamarInJenisKamar:id_jenis_kamar,nama'
         )
           ->where('id_customer', $idCustomer)
           ->where('tgl_checkin', '>', date('Y-m-d'))
+          ->where('status', '!=', 'Batal')
+          ->where('status', '!=', 'Checkin')
           ->get();
     } else {
       $reservasi = Reservasi::with(
@@ -216,10 +261,11 @@ class ReservasiController extends Controller {
         'FKReservasiInFO',
         'FKReservasiInFasilitas.FKTransaksiFasilitasInFasilitas',
         'FKReservasiInInvoice',
-        'FKReservasiInTransaksiKamar.FKTransaksiKamarInJenisKamar:id_jenis_kamar, jenis_kamar'
+        'FKReservasiInTransaksiKamar.FKTransaksiKamarInJenisKamar:id_jenis_kamar,nama'
         )
-          ->whereNotNull('id_sm')
+          ->whereNotNull('id_pic')
           ->where('tgl_checkin', '>', date('Y-m-d'))
+          ->where('status', '!=', 'Batal')
           ->get();
     }
 
@@ -260,7 +306,7 @@ class ReservasiController extends Controller {
       $pembatalanMsg = 'Reservasi dibatalkan, uang jaminan tidak dikembalikan';
     }
 
-    $reservasi->status = 'batal';
+    $reservasi->status = 'Batal';
     $reservasi->save();
 
     return response()->json([
@@ -278,7 +324,7 @@ class ReservasiController extends Controller {
   // GROUP
   public function createGroup(Request $req, $id_cust) {
     $idCustomer = $id_cust;
-    $idSM = Auth::user()->id;
+    $idSM = Auth::user()->id_account;
 
     return $this->addNewBooking($req, $idCustomer, $idSM);
   }
@@ -303,9 +349,9 @@ class ReservasiController extends Controller {
       'FKReservasiInFO',
       'FKReservasiInFasilitas.FKTransaksiFasilitasInFasilitas',
       'FKReservasiInInvoice',
-      'FKReservasiInTransaksiKamar.FKTransaksiKamarInJenisKamar:id_jenis_kamar, jenis_kamar'
+      'FKReservasiInTransaksiKamar.FKTransaksiKamarInJenisKamar:id_jenis_kamar,nama'
       )
-        ->where('status', 'Menunggu Pembayaran')
+        ->where('status', 'Menunggu Pembayaran')->orderBy('created_at', 'desc')
         ->get();
 
     return response()->json([
@@ -332,7 +378,7 @@ class ReservasiController extends Controller {
   }
 
   public function getListPembatalanPersonal(Request $req) {
-    $idCustomer = Auth::user()->id;
+    $idCustomer = Auth::user()->id_customer;
     
     return $this->getListPembatalan($req, $idCustomer);
   }

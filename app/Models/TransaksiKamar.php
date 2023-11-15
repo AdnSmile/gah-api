@@ -17,7 +17,8 @@ class TransaksiKamar extends Model {
       'id_kamar',
       'id_jenis_kamar',
       'id_reservasi',
-      'tipe_bed'
+      'tipe_bed',
+      'harga_per_malam',
     ];
 
     public $timestamps = false;
