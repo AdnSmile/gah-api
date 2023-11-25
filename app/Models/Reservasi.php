@@ -32,7 +32,8 @@ class Reservasi extends Model {
       'id_fo',
       'id_invoice',
       'updated_at',
-      'created_at'
+      'created_at',
+      'total_layanan'
     ];
 
     public function FKReservasiInCustomer() {
@@ -57,7 +58,7 @@ class Reservasi extends Model {
 
     public function FKReservasiInInvoice() {
 
-      return $this->belongsTo(Invoice::class, 'id_invoice', 'id_invoice');
+      return $this->belongsTo(Invoice::class, 'id_invoice', 'id');
     }
 
     public function FKReservasiInTransaksiKamar() {

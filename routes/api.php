@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\JenisKamarController;
 use App\Http\Controllers\KamarController;
 use App\Http\Controllers\FasilitasController;
+use App\Http\Controllers\FrontOfficeController;
 use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\TarifController;
 use App\Http\Controllers\ReservasiController;
@@ -100,6 +101,24 @@ Route::middleware(['auth:sanctum', 'ability:sm'])->group(function () {
     Route::get("all_reservasi", [ReservasiController::class, 'index']);
 });
 
+// fo
+Route::middleware(['auth:sanctum', 'ability:fo'])->group(function () {
+    
+    Route::get('pemesanan_all', [FrontOfficeController::class, 'index']);
+    
+    Route::get('pemesanan_bisa_checkin', [FrontOfficeController::class, 'bisaCheckIn']);
+
+    Route::get('pemesanan_sedang_checkin', [FrontOfficeController::class, 'showSedangCheckin']);
+
+    Route::put('checkin/{idReservasi}', [FrontOfficeController::class, 'checkinReservasi']);
+
+    // tambah fasilitas FO
+    Route::post('add_fasilitas_fo/{idReservasi}', [FrontOfficeController::class, 'addFasilitas']);
+
+    // checkout
+    Route::post('checkout/{idReservasi}', [FrontOfficeController::class, 'checkoutReservasi']);
+});
+
 // customer
 Route::post('customer', [CustomerController::class, 'store'])->middleware('auth:sanctum', 'ability:sm');
 Route::put('customer/{id}', [CustomerController::class, 'update'])->middleware('auth:sanctum', 'ability:customer,sm');
@@ -108,7 +127,7 @@ Route::get('customerGrup', [CustomerController::class, 'indexGrup'])->middleware
 Route::get('customer/{id}', [CustomerController::class, 'show'])->middleware('auth:sanctum', 'ability:customer,sm');
 
 // reservasi
-Route::get('reservasi/{id}', [ReservasiController::class, 'show'])->middleware('auth:sanctum', 'ability:customer,sm');
+Route::get('reservasi/{id}', [ReservasiController::class, 'show'])->middleware('auth:sanctum', 'ability:customer,sm,fo');
 Route::get('reservasiGrup', [ReservasiController::class, 'index'])->middleware('auth:sanctum', 'ability:sm,customer');
 
 // riwayat transaksi

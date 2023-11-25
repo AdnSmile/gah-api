@@ -11,7 +11,7 @@ class Invoice extends Model {
 
     protected $table = 'invoice';
 
-    protected $primaryKey = 'id_invoice';
+    protected $primaryKey = 'id';
     
     public $incrementing = false;
 
@@ -23,6 +23,10 @@ class Invoice extends Model {
       'total_layanan',
       'total_pajak',
       'total_semua',
-      'id_internal'
+      'id_fo',
+      'total_kamar',
+      'updated_at',
+      'created_at',
+      'id_invoice'
     ];
 }

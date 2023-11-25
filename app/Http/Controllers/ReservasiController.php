@@ -119,6 +119,7 @@ class ReservasiController extends Controller {
       'jumlah' => 'required|numeric',
     ];
 
+    $totalHargaLayanan = 0;
     foreach ($fasilitas as $f) {
       $validator = Validator::make($f, $fasilitasValidated);
       if ($validator->fails()) {
@@ -128,14 +129,17 @@ class ReservasiController extends Controller {
           'data' => $validator->errors()
         ], 422);
       }
+
+      $layanan = Fasilitas::where('id_layanan', $f['id_layanan'])->first();
+      $totalHargaLayanan += $f['jumlah'] * $layanan->tarif_layanan;
     }
     
     if (Auth::user()->role == 'sm') {
       // Reservasi group
-      $idBooking = $this->getNewIdBooking('G', $req->tgl_checkin);
+      $idBooking = $this->getNewIdBooking('G', Date('Y-m-d'));
     } else {
       // personal
-      $idBooking = $this->getNewIdBooking('P', $req->tgl_checkin);
+      $idBooking = $this->getNewIdBooking('P', Date('Y-m-d'));
     }
     $reservasi = Reservasi::create([
       'id_booking' => $idBooking,
@@ -151,6 +155,7 @@ class ReservasiController extends Controller {
       'total_deposit' => 0,
       'total_pembayaran' => $totalPembayaran, // hanya kamar, sisanya di invoice
       'updated_at' => null,
+      'total_layanan' => $totalHargaLayanan,
     ]);
 
     // Insert ke kamar
@@ -251,8 +256,8 @@ class ReservasiController extends Controller {
         )
           ->where('id_customer', $idCustomer)
           ->where('tgl_checkin', '>', date('Y-m-d'))
+          ->where('status', '!=', 'Check In')
           ->where('status', '!=', 'Batal')
-          ->where('status', '!=', 'Checkin')
           ->get();
     } else {
       $reservasi = Reservasi::with(
@@ -265,6 +270,7 @@ class ReservasiController extends Controller {
         )
           ->whereNotNull('id_pic')
           ->where('tgl_checkin', '>', date('Y-m-d'))
+          ->where('status', '!=', 'Check In')
           ->where('status', '!=', 'Batal')
           ->get();
     }
@@ -301,9 +307,9 @@ class ReservasiController extends Controller {
     $diff = $tglCheckin - $tglSekarang;
 
     if ($diff > 7 * 24 * 60 * 60) {
-      $pembatalanMsg = 'Reservasi dibatalkan, uang jaminan dikembalikan';
+        $pembatalanMsg = 'Reservasi dibatalkan, uang jaminan dikembalikan';
     } else {
-      $pembatalanMsg = 'Reservasi dibatalkan, uang jaminan tidak dikembalikan';
+        $pembatalanMsg = 'Reservasi dibatalkan, uang jaminan tidak dikembalikan';
     }
 
     $reservasi->status = 'Batal';
