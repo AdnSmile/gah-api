@@ -190,7 +190,7 @@ class FrontOfficeController extends Controller {
     // return $idInvoice;
 
     $invoice = Invoice::create([
-      'tgl_pelunasan' => Date("Y-m-d"),
+      'tgl_pelunasan' => date("Y-m-d H:i:s"),
       'total_harga' => $total_harga,
       'id_invoice' => $idInvoice,
       'total_layanan' => $total_layanan,

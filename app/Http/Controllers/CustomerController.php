@@ -38,6 +38,7 @@ class CustomerController extends Controller {
       'institusi' => $req->institusi,
       'no_telpon' => $req->no_telpon,
       'no_identitas' => $req->no_identitas,
+      'updated_at' => null,
     ]);
 
     if ($customer) {

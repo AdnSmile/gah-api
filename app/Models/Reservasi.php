@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Reservasi extends Model {
 
@@ -64,5 +65,22 @@ class Reservasi extends Model {
     public function FKReservasiInTransaksiKamar() {
 
       return $this->hasMany(TransaksiKamar::class, 'id_reservasi', 'id_reservasi');
+    }
+
+    public function getTopCustomers() {
+
+      return DB::table('customer as c')
+            ->join('reservasi as r', 'c.id_customer', '=', 'r.id_customer')
+            ->select(
+                'c.id_customer',
+                'c.nama as Nama_Customer',
+                DB::raw('COUNT(r.id_reservasi) AS Jumlah_Reservasi'),
+                DB::raw('SUM(r.total_pembayaran) AS Total_Pembayaran')
+            )
+            ->where('r.status', '!=', 'Batal')
+            ->groupBy('c.id_customer', 'c.nama')
+            ->orderByDesc('Jumlah_Reservasi')
+            ->limit(5)
+            ->get();
     }
 }

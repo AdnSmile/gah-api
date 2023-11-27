@@ -8,6 +8,7 @@ use App\Http\Controllers\JenisKamarController;
 use App\Http\Controllers\KamarController;
 use App\Http\Controllers\FasilitasController;
 use App\Http\Controllers\FrontOfficeController;
+use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\TarifController;
 use App\Http\Controllers\ReservasiController;
@@ -117,6 +118,18 @@ Route::middleware(['auth:sanctum', 'ability:fo'])->group(function () {
 
     // checkout
     Route::post('checkout/{idReservasi}', [FrontOfficeController::class, 'checkoutReservasi']);
+});
+
+// gm & owner
+Route::middleware(['auth:sanctum', 'ability:gm,owner'])->group(function () {
+    
+    Route::get('customer_baru/{year}', [LaporanController::class, 'laporanCustomerBaru']);
+
+    Route::get('pendapatan_bulanan/{year}', [LaporanController::class, 'laporanPendapatan']);
+
+    Route::get('jumlah_customer/{year}/{month}', [LaporanController::class, 'laporanJumlahCustomer']);
+
+    Route::get('pemesan_terbanyak', [LaporanController::class, 'laporanPemesananTerbanyak']);
 });
 
 // customer

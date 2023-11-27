@@ -40,6 +40,8 @@ class AccountController extends Controller {
     $customer->alamat = $req->alamat;
     $customer->no_identitas = $req->no_identitas;
     $customer->institusi = $req->institusi;
+    $customer->updated_at = null;
+    $customer->created_at = Date('Y-m-d H:i:s');
 
     $customer->save();
 
