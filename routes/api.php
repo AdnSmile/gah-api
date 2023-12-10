@@ -129,7 +129,7 @@ Route::middleware(['auth:sanctum', 'ability:gm,owner'])->group(function () {
 
     Route::get('jumlah_customer/{year}/{month}', [LaporanController::class, 'laporanJumlahCustomer']);
 
-    Route::get('pemesan_terbanyak', [LaporanController::class, 'laporanPemesananTerbanyak']);
+    Route::get('pemesan_terbanyak/{year}', [LaporanController::class, 'laporanPemesananTerbanyak']);
 });
 
 // customer

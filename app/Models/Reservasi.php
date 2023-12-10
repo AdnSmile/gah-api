@@ -67,17 +67,18 @@ class Reservasi extends Model {
       return $this->hasMany(TransaksiKamar::class, 'id_reservasi', 'id_reservasi');
     }
 
-    public function getTopCustomers() {
+    public function getTopCustomers($year) {
 
       return DB::table('customer as c')
             ->join('reservasi as r', 'c.id_customer', '=', 'r.id_customer')
             ->select(
                 'c.id_customer',
-                'c.nama as Nama_Customer',
-                DB::raw('COUNT(r.id_reservasi) AS Jumlah_Reservasi'),
-                DB::raw('SUM(r.total_pembayaran) AS Total_Pembayaran')
+                'c.nama as nama_customer',
+                DB::raw('COUNT(r.id_reservasi) AS jumlah_reservasi'),
+                DB::raw('SUM(r.total_pembayaran) AS total_pembayaran')
             )
             ->where('r.status', '!=', 'Batal')
+            ->whereYear('r.tgl_checkin', $year)
             ->groupBy('c.id_customer', 'c.nama')
             ->orderByDesc('Jumlah_Reservasi')
             ->limit(5)

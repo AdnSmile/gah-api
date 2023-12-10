@@ -6,6 +6,7 @@ use App\Models\Reservasi;
 use App\Models\TransaksiFasilitas;
 use App\Models\TransaksiKamar;
 use App\Models\Fasilitas;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -98,6 +99,10 @@ class ReservasiController extends Controller {
       'harga_per_malam' => 'required|numeric',
     ];
 
+    $checkin = Carbon::parse($req->tgl_checkin);
+    $checkout = Carbon::parse($req->tgl_checkout);
+    $jumlahHari = $checkin->diffInDays($checkout);
+
     $totalPembayaran = 0;
     foreach ($kamar as $k) {
       $validator = Validator::make($k, $kamarValidated);
@@ -109,7 +114,7 @@ class ReservasiController extends Controller {
         ], 422);
       }
 
-      $totalPembayaran += $k['jumlah'] * $k['harga_per_malam'];
+      $totalPembayaran += $k['jumlah'] * ($k['harga_per_malam'] * $jumlahHari);
     }
 
     // Check input fasilitas
@@ -218,6 +223,16 @@ class ReservasiController extends Controller {
         'status' => "error",
         'data' => null
       ], 404);
+    }
+
+    if (!$reservasi->id_pic){
+      if ($req->uang_jaminan < $reservasi->total_pembayaran) {
+        return response()->json([
+          'message' => 'Uang jaminan personal harus sama dengan total pembayaran',
+          'status' => "error",
+          'data' => null
+        ], 400);
+      }
     }
 
     $minimumPay = $reservasi->total_pembayaran * 0.5;

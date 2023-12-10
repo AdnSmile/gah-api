@@ -47,10 +47,10 @@ class LaporanController extends Controller
         ], 200);
     }
 
-    public function laporanPemesananTerbanyak() {
+    public function laporanPemesananTerbanyak($year) {
         
         $reservasi = new Reservasi();
-        $pemesananTerbanyak = $reservasi->getTopCustomers();
+        $pemesananTerbanyak = $reservasi->getTopCustomers($year);
 
         return response()->json([
             'message' => 'Berhasil menampilkan data pemesanan terbanyak',
