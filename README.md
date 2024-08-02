@@ -6,6 +6,6 @@ This backend project for [gah-web](https://github.com/AdnSmile/gah-web) build us
 - Multi Role Authentication and Authorization
 - Complex CRUD and Transaction
 - Provide api for data report
-- Managing user Reservation
+- Manage user Reservation
 
 ### API Documentation
